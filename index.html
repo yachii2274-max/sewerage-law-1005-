@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--g900:#0c2a1f;--g800:#123d2d;--g700:#1a5a41;--g600:#23734f;--g500:#2f8a5f;--g300:#9fcfb4;--g200:#cfe6d9;--g100:#e6f1eb;--g50:#f2f7f4;--gold:#c9a24a;--bg:#f4f5f2;--line:#e2e6e3;--ink:#1b2520;--muted:#5b6862;--sans:"Noto Sans TC",system-ui,sans-serif;--serif:"Noto Serif TC",serif;}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;-webkit-font-smoothing:antialiased;}
+    a{color:var(--g700);} a:hover{color:var(--g900);}
+    ::selection{background:var(--g200);}
+    button{font-family:var(--sans);}
+    button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--g500);outline-offset:2px;}
+    @keyframes dcpulse{0%,100%{opacity:.25}50%{opacity:1}}
+  </style>
+</helmet>
+
+<div style="height:100vh;display:flex;flex-direction:column;background:var(--bg);">
+
+  <header style="flex:none;background:var(--g800);color:#fff;display:flex;align-items:center;gap:20px;padding:0 24px;min-height:68px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <span style="width:40px;height:40px;border-radius:10px;border:1.5px solid var(--gold);color:var(--gold);display:grid;place-items:center;font:700 19px var(--serif);">下</span>
+      <div style="display:flex;flex-direction:column;gap:1px;">
+        <span style="font:700 19px/1.2 var(--serif);letter-spacing:.04em;">下水道法規智慧查詢</span>
+        <span style="font-size:12px;letter-spacing:.12em;color:var(--g300);">內政部國土管理署　內部使用</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:4px;padding:4px;background:rgba(255,255,255,.08);border-radius:12px;margin-left:16px;">
+      <sc-if value="{{ isChatTab }}" hint-placeholder-val="{{ true }}">
+        <button type="button" style="border:none;border-radius:9px;padding:8px 18px;font-size:15px;font-weight:500;background:#fff;color:var(--g800);cursor:pointer;">對話查詢</button>
+        <button type="button" onClick="{{ goBrowse }}" style="border:none;border-radius:9px;padding:8px 18px;font-size:15px;background:transparent;color:#d9e8df;cursor:pointer;" style-hover="background:rgba(255,255,255,.1);">條文瀏覽</button>
+      </sc-if>
+      <sc-if value="{{ isBrowseTab }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ goChat }}" style="border:none;border-radius:9px;padding:8px 18px;font-size:15px;background:transparent;color:#d9e8df;cursor:pointer;" style-hover="background:rgba(255,255,255,.1);">對話查詢</button>
+        <button type="button" style="border:none;border-radius:9px;padding:8px 18px;font-size:15px;font-weight:500;background:#fff;color:var(--g800);cursor:pointer;">條文瀏覽</button>
+      </sc-if>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:13px;color:var(--g300);">介面預覽</span>
+      <div style="display:flex;gap:2px;padding:3px;border:1px solid rgba(255,255,255,.2);border-radius:999px;">
+        <sc-if value="{{ isWeb }}" hint-placeholder-val="{{ true }}">
+          <button type="button" style="border:none;border-radius:999px;padding:5px 14px;font-size:13px;background:var(--gold);color:var(--g900);font-weight:700;cursor:pointer;">網頁</button>
+          <button type="button" onClick="{{ setLine }}" style="border:none;border-radius:999px;padding:5px 14px;font-size:13px;background:transparent;color:#d9e8df;cursor:pointer;">LINE</button>
+        </sc-if>
+        <sc-if value="{{ isLine }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ setWeb }}" style="border:none;border-radius:999px;padding:5px 14px;font-size:13px;background:transparent;color:#d9e8df;cursor:pointer;">網頁</button>
+          <button type="button" style="border:none;border-radius:999px;padding:5px 14px;font-size:13px;background:var(--gold);color:var(--g900);font-weight:700;cursor:pointer;">LINE</button>
+        </sc-if>
+      </div>
+    </div>
+  </header>
+
+  <!-- 條文瀏覽 -->
+  <sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;min-height:0;overflow:auto;">
+      <div style="background:linear-gradient(180deg,var(--g50),var(--bg));border-bottom:1px solid var(--line);">
+        <div style="max-width:960px;margin:0 auto;padding:44px 28px 28px;display:flex;flex-direction:column;gap:16px;">
+          <span style="font-size:13px;letter-spacing:.2em;color:var(--g600);font-weight:700;">ACT TEXT · 母法全文</span>
+          <h1 style="margin:0;font:700 38px/1.2 var(--serif);color:var(--g900);">法規與解釋函令</h1>
+          <p style="margin:0;font-size:16px;color:var(--muted);">{{ browseStat }}</p>
+          <div style="display:flex;gap:4px;padding:4px;background:#fff;border:1px solid var(--line);border-radius:12px;align-self:flex-start;">
+            <sc-for list="{{ lawTabs }}" as="lt" hint-placeholder-count="3">
+              <sc-if value="{{ lt.active }}" hint-placeholder-val="{{ false }}"><button type="button" style="border:none;border-radius:9px;padding:8px 18px;font-size:15px;font-weight:500;background:var(--g700);color:#fff;cursor:pointer;">{{ lt.name }}</button></sc-if>
+              <sc-if value="{{ lt.inactive }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ lt.go }}" style="border:none;border-radius:9px;padding:8px 18px;font-size:15px;background:transparent;color:var(--ink);cursor:pointer;" style-hover="background:var(--g50);">{{ lt.name }}</button></sc-if>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;max-width:520px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:4px 6px 4px 16px;box-shadow:0 1px 2px rgba(12,42,31,.05);">
+            <span style="color:var(--muted);font-size:16px;">⌕</span>
+            <input placeholder="輸入條號、法規名稱或關鍵字，例如 32、臺北市、使用費" value="{{ browseQ }}" onInput="{{ onBrowseQ }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font:400 17px var(--sans);padding:10px 0;color:var(--ink);" />
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <sc-for list="{{ chapterLinks }}" as="cl" hint-placeholder-count="7">
+              <button type="button" onClick="{{ cl.go }}" style="border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:14px;color:var(--ink);cursor:pointer;" style-hover="border-color:var(--g500);color:var(--g700);">{{ cl.name }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:960px;margin:0 auto;padding:32px 28px 80px;display:flex;flex-direction:column;gap:44px;">
+        <sc-if value="{{ showLawPicker }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:18px;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <sc-for list="{{ lawCats }}" as="lc" hint-placeholder-count="4">
+                <sc-if value="{{ lc.active }}" hint-placeholder-val="{{ false }}"><button type="button" style="border:1px solid var(--g700);background:var(--g700);color:#fff;border-radius:999px;padding:7px 16px;font-size:14px;font-weight:500;cursor:pointer;">{{ lc.name }}　{{ lc.count }}</button></sc-if>
+                <sc-if value="{{ lc.inactive }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ lc.go }}" style="border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:7px 16px;font-size:14px;cursor:pointer;" style-hover="border-color:var(--g500);color:var(--g700);">{{ lc.name }}　{{ lc.count }}</button></sc-if>
+              </sc-for>
+            </div>
+            <sc-for list="{{ lawGroups }}" as="lg" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;align-items:baseline;gap:12px;">
+                  <h2 style="margin:0;font:700 22px var(--serif);color:var(--g800);">{{ lg.name }}</h2>
+                  <span style="font-size:14px;color:var(--muted);">{{ lg.count }}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+                  <sc-for list="{{ lg.laws }}" as="lw" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ lw.open }}" style="text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;color:var(--ink);" style-hover="border-color:var(--g300);box-shadow:0 6px 18px rgba(12,42,31,.07);">
+                      <span style="font-size:16px;font-weight:500;line-height:1.5;">{{ lw.title }}</span>
+                      <span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <span style="font-size:13px;color:var(--muted);">{{ lw.meta }}</span>
+                        <sc-if value="{{ lw.upd }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:700;color:var(--g700);background:var(--g100);border-radius:6px;padding:1px 8px;">114年更新</span></sc-if>
+                        <sc-if value="{{ lw.hit }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#7a5c14;background:#f6efdc;border-radius:6px;padding:1px 8px;">{{ lw.hitLabel }}</span></sc-if>
+                      </span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ showLawBack }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button type="button" onClick="{{ lawBack }}" style="align-self:flex-start;border:none;background:none;padding:0;color:var(--g600);font-size:15px;font-weight:500;cursor:pointer;">← 返回法規列表</button>
+            <span style="font-size:14px;color:var(--muted);line-height:1.7;">{{ lawHist }}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ browseEmpty }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0;font-size:17px;color:var(--muted);">沒有符合的條文。</p>
+        </sc-if>
+        <sc-for list="{{ browseChapters }}" as="ch" hint-placeholder-count="3">
+          <section id="{{ ch.domId }}" style="display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;align-items:baseline;gap:14px;">
+              <h2 style="margin:0;font:700 24px var(--serif);color:var(--g800);">{{ ch.name }}</h2>
+              <span style="font-size:14px;color:var(--muted);">{{ ch.countLabel }}</span>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(12,42,31,.04);">
+              <sc-for list="{{ ch.articles }}" as="ba" hint-placeholder-count="3">
+                <article style="display:grid;grid-template-columns:96px minmax(0,1fr);gap:20px;padding:24px 28px;border-top:1px solid var(--line);">
+                  <div style="font:700 20px/1.4 var(--serif);color:var(--g700);">{{ ba.label }}</div>
+                  <div style="display:flex;flex-direction:column;gap:12px;">
+                    <sc-if value="{{ ba.hasText }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-size:17px;line-height:1.95;white-space:pre-line;text-wrap:pretty;">{{ ba.text }}</p></sc-if>
+                    <sc-if value="{{ ba.hasRulings }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;flex-direction:column;gap:8px;">
+                        <sc-for list="{{ ba.rulings }}" as="br" hint-placeholder-count="1">
+                          <div style="background:var(--g50);border-radius:10px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
+                            <button type="button" onClick="{{ br.toggle }}" style="display:flex;gap:12px;align-items:center;background:none;border:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);">
+                              <span style="flex:none;font-size:12px;font-weight:700;color:var(--g700);background:var(--g200);border-radius:6px;padding:2px 8px;">函釋</span>
+                              <span style="flex:1;min-width:0;display:flex;flex-direction:column;">
+                                <span style="font-size:16px;font-weight:500;">{{ br.brief }}</span>
+                                <span style="font-size:13px;color:var(--muted);">{{ br.meta }}　·　{{ br.src }}</span>
+                              </span>
+                              <span style="font-size:13px;color:var(--g600);white-space:nowrap;">{{ br.toggleLabel }}</span>
+                            </button>
+                            <sc-if value="{{ br.open }}" hint-placeholder-val="{{ false }}">
+                              <p style="margin:0;font-size:16px;line-height:1.9;color:var(--ink);white-space:pre-line;">{{ br.summary }}</p>
+                            </sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ ba.hasMore }}" hint-placeholder-val="{{ false }}">
+                      <button type="button" onClick="{{ ba.toggleMore }}" style="align-self:flex-start;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 14px;font-size:14px;color:var(--g700);cursor:pointer;" style-hover="border-color:var(--g500);">{{ ba.moreLabel }}</button>
+                    </sc-if>
+                    <sc-if value="{{ ba.hasAsk }}" hint-placeholder-val="{{ true }}"><div>
+                      <button type="button" onClick="{{ ba.ask }}" style="border:none;background:none;padding:0;color:var(--g600);font-size:15px;font-weight:500;cursor:pointer;" style-hover="color:var(--g900);">詢問此條 →</button>
+                    </div></sc-if>
+                  </div>
+                </article>
+              </sc-for>
+            </div>
+          </section>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- 網頁對話 -->
+  <sc-if value="{{ isWebChat }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;min-height:0;display:flex;">
+      <sc-if value="{{ showSidebar }}" hint-placeholder-val="{{ true }}">
+        <aside style="width:288px;flex:none;box-sizing:border-box;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;">
+          <div style="padding:20px 18px 12px;">
+            <button type="button" onClick="{{ newChat }}" style="width:100%;border:none;border-radius:12px;background:var(--g700);color:#fff;font-size:16px;font-weight:500;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;" style-hover="background:var(--g800);">＋　新的查詢</button>
+          </div>
+          <div style="flex:1;min-height:0;overflow:auto;padding:8px 12px 16px;display:flex;flex-direction:column;gap:22px;">
+            <div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--muted);padding:0 8px 8px;">查詢紀錄</div>
+              <sc-if value="{{ noHistory }}" hint-placeholder-val="{{ true }}">
+                <p style="margin:0;padding:0 8px;font-size:14px;color:var(--muted);">尚無紀錄</p>
+              </sc-if>
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <sc-for list="{{ history }}" as="h" hint-placeholder-count="0">
+                  <div style="display:flex;align-items:center;">
+                    <sc-if value="{{ h.active }}" hint-placeholder-val="{{ false }}">
+                      <button type="button" onClick="{{ h.open }}" style="flex:1;min-width:0;text-align:left;border:none;border-radius:10px;background:var(--g100);padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;">
+                        <span style="font-size:15px;font-weight:500;color:var(--g900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ h.title }}</span>
+                        <span style="font-size:12px;color:var(--g600);">{{ h.date }}</span>
+                      </button>
+                    </sc-if>
+                    <sc-if value="{{ h.inactive }}" hint-placeholder-val="{{ true }}">
+                      <button type="button" onClick="{{ h.open }}" style="flex:1;min-width:0;text-align:left;border:none;border-radius:10px;background:transparent;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;" style-hover="background:var(--bg);">
+                        <span style="font-size:15px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ h.title }}</span>
+                        <span style="font-size:12px;color:var(--muted);">{{ h.date }}</span>
+                      </button>
+                    </sc-if>
+                    <button type="button" onClick="{{ h.del }}" aria-label="刪除" style="flex:none;border:none;background:none;width:30px;height:30px;border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;" style-hover="background:var(--bg);color:var(--ink);">×</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--muted);padding:0 8px 8px;">常見事由</div>
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <sc-for list="{{ topics }}" as="t" hint-placeholder-count="6">
+                  <button type="button" onClick="{{ t.ask }}" style="text-align:left;border:none;border-radius:10px;background:transparent;padding:9px 12px;cursor:pointer;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:10px;" style-hover="background:var(--g50);color:var(--g800);">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--g500);flex:none;"></span>{{ t.name }}
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none;margin:12px;padding:14px 16px;border-radius:12px;background:var(--g50);display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--g700);">資料庫</span>
+            <span style="font-size:14px;color:var(--ink);">{{ kbStat }}</span>
+            <span style="font-size:14px;color:var(--ink);">{{ kbStat3 }}</span>
+            <span style="font-size:14px;color:var(--ink);">{{ kbStat2 }}</span>
+            <span style="font-size:12px;color:var(--muted);">含 111、114、115 年更新</span>
+          </div>
+        </aside>
+      </sc-if>
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;position:relative;">
+        <div ref="{{ webScrollRef }}" style="flex:1;min-height:0;overflow:auto;">
+          <div style="max-width:860px;margin:0 auto;padding:40px 28px 40px;display:flex;flex-direction:column;gap:36px;">
+
+            <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ true }}">
+              <div style="padding-top:28px;display:flex;flex-direction:column;gap:18px;">
+                <span style="font-size:13px;letter-spacing:.2em;color:var(--g600);font-weight:700;">SEWERAGE LAW ASSISTANT</span>
+                <h1 style="margin:0;font:700 42px/1.3 var(--serif);color:var(--g900);text-wrap:balance;">請問今天要查詢<br>哪一項下水道法規？</h1>
+                <p style="margin:0;max-width:600px;font-size:18px;line-height:1.8;color:var(--muted);text-wrap:pretty;">直接描述案情或承辦疑義。系統會檢索條文與函釋，依「結論、法律依據、相關函釋、處理建議」整理回覆，並標註引用來源。</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:14px;">
+                  <sc-for list="{{ topics }}" as="t" hint-placeholder-count="6">
+                    <button type="button" onClick="{{ t.ask }}" style="text-align:left;cursor:pointer;padding:20px 22px;background:#fff;border:1px solid var(--line);border-radius:16px;color:var(--ink);display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(12,42,31,.04);transition:all .15s;" style-hover="border-color:var(--g300);box-shadow:0 8px 24px rgba(12,42,31,.08);transform:translateY(-1px);">
+                      <span style="display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:13px;font-weight:700;color:var(--g700);background:var(--g100);border-radius:6px;padding:3px 10px;">{{ t.name }}</span>
+                        <span style="font:600 14px var(--serif);color:var(--g300);">{{ t.idx }}</span>
+                      </span>
+                      <span style="font-size:16px;line-height:1.65;">{{ t.q }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-for list="{{ messages }}" as="m" hint-placeholder-count="0">
+              <div style="display:flex;flex-direction:column;">
+                <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+                  <div style="align-self:flex-end;max-width:78%;background:var(--g700);color:#fff;padding:14px 20px;border-radius:20px 20px 6px 20px;font-size:17px;line-height:1.7;white-space:pre-wrap;box-shadow:0 2px 8px rgba(12,42,31,.12);">{{ m.text }}</div>
+                </sc-if>
+
+                <sc-if value="{{ m.isBot }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:14px;align-items:flex-start;">
+                    <span style="flex:none;width:38px;height:38px;border-radius:12px;background:var(--g800);color:var(--gold);display:grid;place-items:center;font:700 17px var(--serif);">下</span>
+                    <div style="flex:1;min-width:0;">
+                      <sc-if value="{{ m.loading }}" hint-placeholder-val="{{ false }}">
+                        <div style="padding:10px 0;font-size:16px;color:var(--muted);">{{ m.loadingEl }}</div>
+                      </sc-if>
+                      <sc-if value="{{ m.ready }}" hint-placeholder-val="{{ false }}">
+                        <div style="background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 2px 10px rgba(12,42,31,.05);overflow:hidden;">
+
+                          <div style="padding:24px 28px;background:linear-gradient(180deg,var(--g50),#fff);border-bottom:1px solid var(--line);">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                              <span style="font-size:13px;font-weight:700;letter-spacing:.1em;color:#fff;background:var(--g700);border-radius:6px;padding:3px 10px;">結論</span>
+                            </div>
+                            <p style="margin:0;font-size:18.5px;line-height:1.9;color:var(--ink);text-wrap:pretty;">
+                              <sc-for list="{{ m.conclusion }}" as="sg" hint-placeholder-count="1">
+                                <sc-if value="{{ sg.isText }}" hint-placeholder-val="{{ true }}"><span>{{ sg.text }}</span></sc-if>
+                                <sc-if value="{{ sg.isCite }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ sg.go }}" title="{{ sg.title }}" style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;margin:0 2px;padding:0 5px;border:none;border-radius:6px;background:var(--g200);color:var(--g800);font:700 13px var(--sans);cursor:pointer;vertical-align:3px;" style-hover="background:var(--g700);color:#fff;">{{ sg.label }}</button></sc-if>
+                              </sc-for>
+                            </p>
+                          </div>
+
+                          <sc-if value="{{ m.hasArticles }}" hint-placeholder-val="{{ false }}">
+                            <div style="padding:22px 28px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:12px;">
+                              <div style="display:flex;align-items:baseline;gap:10px;">
+                                <span style="font:700 18px var(--serif);color:var(--g800);">法律依據</span>
+                                <span style="font-size:13px;color:var(--muted);">{{ m.articleCount }}</span>
+                              </div>
+                              <sc-for list="{{ m.articles }}" as="s" hint-placeholder-count="1">
+                                <div id="{{ s.domId }}" style="border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+                                  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                    <span style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--g100);color:var(--g800);display:grid;place-items:center;font:700 13px var(--sans);">{{ s.n }}</span>
+                                    <span style="font:700 18px var(--serif);color:var(--ink);">{{ s.title }}</span>
+                                    <span style="font-size:13px;color:var(--muted);">{{ s.meta }}</span>
+                                    <button type="button" onClick="{{ s.toggle }}" style="margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 12px;font-size:13px;color:var(--g700);cursor:pointer;" style-hover="border-color:var(--g500);">{{ s.toggleLabel }}</button>
+                                  </div>
+                                  <sc-if value="{{ s.hasPoint }}" hint-placeholder-val="{{ false }}">
+                                    <p style="margin:0;padding-left:38px;font-size:16.5px;line-height:1.8;color:var(--ink);">{{ s.point }}</p>
+                                  </sc-if>
+                                  <sc-if value="{{ s.open }}" hint-placeholder-val="{{ false }}">
+                                    <p style="margin:4px 0 0 38px;font:400 16px/1.95 var(--serif);white-space:pre-line;padding:14px 18px;border-radius:10px;background:var(--bg);color:var(--ink);">{{ s.body }}</p>
+                                  </sc-if>
+                                </div>
+                              </sc-for>
+                            </div>
+                          </sc-if>
+
+                          <sc-if value="{{ m.hasRulings }}" hint-placeholder-val="{{ false }}">
+                            <div style="padding:22px 28px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:12px;">
+                              <div style="display:flex;align-items:baseline;gap:10px;">
+                                <span style="font:700 18px var(--serif);color:var(--g800);">相關函釋</span>
+                                <span style="font-size:13px;color:var(--muted);">{{ m.rulingCount }}</span>
+                              </div>
+                              <sc-for list="{{ m.rulings }}" as="s" hint-placeholder-count="1">
+                                <div id="{{ s.domId }}" style="border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+                                  <div style="display:flex;align-items:flex-start;gap:12px;">
+                                    <span style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--g100);color:var(--g800);display:grid;place-items:center;font:700 13px var(--sans);margin-top:1px;">{{ s.n }}</span>
+                                    <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+                                      <span style="font-size:17px;font-weight:700;">{{ s.title }}</span>
+                                      <span style="display:flex;flex-wrap:wrap;gap:6px;">
+                                        <span style="font-size:12.5px;color:var(--g800);background:var(--g50);border:1px solid var(--g200);border-radius:6px;padding:1px 8px;">{{ s.agency }}</span>
+                                        <span style="font-size:12.5px;color:var(--muted);padding:2px 0;">{{ s.date }}　{{ s.docNo }}</span>
+                                      </span>
+                                    </span>
+                                    <button type="button" onClick="{{ s.toggle }}" style="flex:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 12px;font-size:13px;color:var(--g700);cursor:pointer;" style-hover="border-color:var(--g500);">{{ s.toggleLabel }}</button>
+                                  </div>
+                                  <sc-if value="{{ s.hasPoint }}" hint-placeholder-val="{{ false }}">
+                                    <p style="margin:0;padding-left:38px;font-size:16.5px;line-height:1.8;">{{ s.point }}</p>
+                                  </sc-if>
+                                  <sc-if value="{{ s.open }}" hint-placeholder-val="{{ false }}">
+                                    <div style="margin:4px 0 0 38px;padding:14px 18px;border-radius:10px;background:var(--bg);display:flex;flex-direction:column;gap:6px;">
+                                      <span style="font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--g700);">函釋全文</span>
+                                      <p style="margin:0;font-size:16px;line-height:1.9;white-space:pre-line;">{{ s.body }}</p>
+                                    </div>
+                                  </sc-if>
+                                </div>
+                              </sc-for>
+                            </div>
+                          </sc-if>
+
+                          <sc-if value="{{ m.hasSuggestions }}" hint-placeholder-val="{{ false }}">
+                            <div style="padding:22px 28px;display:flex;flex-direction:column;gap:14px;">
+                              <div style="display:flex;align-items:baseline;gap:10px;">
+                                <span style="font:700 18px var(--serif);color:var(--g800);">處理建議</span>
+                                <span style="font-size:13px;color:var(--muted);">內部參考</span>
+                              </div>
+                              <div style="display:flex;flex-direction:column;gap:0;">
+                                <sc-for list="{{ m.suggestions }}" as="sv" hint-placeholder-count="2">
+                                  <div style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:10px 0;">
+                                    <span style="width:30px;height:30px;border-radius:50%;border:1.5px solid var(--g500);color:var(--g700);display:grid;place-items:center;font:700 14px var(--serif);">{{ sv.n }}</span>
+                                    <p style="margin:3px 0 0;font-size:17px;line-height:1.85;text-wrap:pretty;">
+                                      <sc-for list="{{ sv.segs }}" as="sg" hint-placeholder-count="1">
+                                        <sc-if value="{{ sg.isText }}" hint-placeholder-val="{{ true }}"><span>{{ sg.text }}</span></sc-if>
+                                        <sc-if value="{{ sg.isCite }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ sg.go }}" title="{{ sg.title }}" style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;margin:0 2px;padding:0 5px;border:none;border-radius:6px;background:var(--g200);color:var(--g800);font:700 13px var(--sans);cursor:pointer;vertical-align:3px;" style-hover="background:var(--g700);color:#fff;">{{ sg.label }}</button></sc-if>
+                                      </sc-for>
+                                    </p>
+                                  </div>
+                                </sc-for>
+                              </div>
+                            </div>
+                          </sc-if>
+
+                          <div style="display:flex;align-items:center;gap:10px;padding:12px 28px;background:var(--bg);border-top:1px solid var(--line);">
+                            <span style="font-size:13px;color:var(--muted);">依檢索之條文與解釋函令產生　·　非正式法律意見</span>
+                            <button type="button" onClick="{{ m.copyAll }}" style="margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 14px;font-size:14px;color:var(--g700);cursor:pointer;" style-hover="border-color:var(--g500);">{{ m.copyLabel }}</button>
+                          </div>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="flex:none;padding:0 28px 18px;background:linear-gradient(180deg,rgba(244,245,242,0),var(--bg) 30%);">
+          <div style="max-width:804px;margin:0 auto;">
+            <div style="display:flex;gap:10px;align-items:flex-end;background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px 10px 10px 20px;box-shadow:0 6px 24px rgba(12,42,31,.08);">
+              <textarea rows="1" placeholder="輸入問題，例如：民眾逾期未接管可以處罰嗎？" value="{{ input }}" onInput="{{ onInput }}" onKeyDown="{{ onKeyDown }}" style="flex:1;border:none;outline:none;resize:none;background:transparent;font:400 17px/1.6 var(--sans);color:var(--ink);padding:8px 0;max-height:160px;min-height:28px;"></textarea>
+              <button type="button" onClick="{{ send }}" disabled="{{ sendDisabled }}" style="flex:none;border:none;border-radius:12px;background:var(--g700);color:#fff;font-size:16px;font-weight:500;padding:11px 22px;cursor:pointer;" style-hover="background:var(--g800);">送出</button>
+            </div>
+            <p style="margin:10px 0 0;font-size:13px;color:var(--muted);text-align:center;">Enter 送出　·　Shift + Enter 換行　·　回覆僅供內部參考</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- LINE 模擬 -->
+  <sc-if value="{{ isLineChat }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;min-height:0;display:flex;justify-content:center;align-items:center;padding:28px;gap:56px;background:radial-gradient(ellipse at 30% 20%,var(--g100),var(--bg) 60%);">
+      <div style="width:390px;max-width:100%;height:100%;max-height:820px;display:flex;flex-direction:column;background:#e4ece7;border:10px solid #1b2520;border-radius:44px;overflow:hidden;box-shadow:0 30px 60px rgba(12,42,31,.2);">
+        <div style="flex:none;display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--g800);color:#fff;">
+          <span style="font-size:22px;line-height:1;">‹</span>
+          <span style="width:32px;height:32px;border-radius:50%;background:#fff;color:var(--g800);display:grid;place-items:center;font:700 15px var(--serif);">下</span>
+          <span style="display:flex;flex-direction:column;">
+            <span style="font-size:16px;font-weight:700;">下水道法規助理</span>
+            <span style="font-size:11px;color:var(--g300);">國土署內部帳號</span>
+          </span>
+          <button type="button" onClick="{{ newChat }}" style="margin-left:auto;background:none;border:1px solid rgba(255,255,255,.4);color:#fff;font-size:12px;padding:5px 11px;border-radius:14px;cursor:pointer;">新對話</button>
+        </div>
+
+        <div ref="{{ lineScrollRef }}" style="flex:1;min-height:0;overflow:auto;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="flex:none;width:34px;height:34px;border-radius:50%;background:var(--g800);color:var(--gold);display:grid;place-items:center;font:700 15px var(--serif);">下</span>
+            <div style="background:#fff;border-radius:18px;border-top-left-radius:4px;padding:10px 14px;font-size:15.5px;line-height:1.6;max-width:260px;">您好！請輸入問題或點選下方常見事由，我會整理相關條文與函釋。</div>
+          </div>
+          <sc-for list="{{ messages }}" as="m" hint-placeholder-count="0">
+            <div style="display:flex;flex-direction:column;">
+              <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+                <div style="align-self:flex-end;max-width:250px;background:var(--g300);color:var(--g900);border-radius:18px;border-top-right-radius:4px;padding:10px 14px;font-size:15.5px;line-height:1.6;white-space:pre-wrap;">{{ m.text }}</div>
+              </sc-if>
+              <sc-if value="{{ m.isBot }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:8px;align-items:flex-start;">
+                  <span style="flex:none;width:34px;height:34px;border-radius:50%;background:var(--g800);color:var(--gold);display:grid;place-items:center;font:700 15px var(--serif);">下</span>
+                  <sc-if value="{{ m.loading }}" hint-placeholder-val="{{ false }}">
+                    <div style="background:#fff;border-radius:18px;border-top-left-radius:4px;padding:12px 14px;font-size:14px;">{{ m.loadingEl }}</div>
+                  </sc-if>
+                  <sc-if value="{{ m.ready }}" hint-placeholder-val="{{ false }}">
+                    <div style="width:282px;background:#fff;border-radius:18px;border-top-left-radius:4px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.06);">
+                      <div style="background:var(--g700);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:14px;font-weight:700;letter-spacing:.06em;">查詢結果</span>
+                        <span style="font-size:11px;color:var(--g200);">下水道法</span>
+                      </div>
+                      <div style="padding:12px 14px;font-size:15px;line-height:1.75;">
+                        <sc-for list="{{ m.conclusion }}" as="sg" hint-placeholder-count="1">
+                          <sc-if value="{{ sg.isText }}" hint-placeholder-val="{{ true }}"><span>{{ sg.text }}</span></sc-if>
+                          <sc-if value="{{ sg.isCite }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ sg.go }}" style="margin:0 1px;padding:0 5px;border:none;border-radius:6px;background:var(--g100);color:var(--g800);font:700 12px/1.6 var(--sans);cursor:pointer;">{{ sg.label }}</button></sc-if>
+                        </sc-for>
+                      </div>
+                      <sc-for list="{{ m.sources }}" as="s" hint-placeholder-count="1">
+                        <div id="{{ s.lineDomId }}" style="border-top:1px solid #eef1ef;">
+                          <button type="button" onClick="{{ s.toggle }}" style="width:100%;display:flex;gap:8px;align-items:center;background:none;border:none;padding:10px 14px;text-align:left;cursor:pointer;color:var(--ink);">
+                            <span style="flex:none;width:20px;height:20px;border-radius:50%;background:var(--g100);color:var(--g800);display:grid;place-items:center;font:700 11px var(--sans);">{{ s.n }}</span>
+                            <span style="flex:1;min-width:0;font-size:14.5px;font-weight:500;">{{ s.shortTitle }}</span>
+                            <span style="font-size:12px;color:var(--g600);">{{ s.chev }}</span>
+                          </button>
+                          <sc-if value="{{ s.open }}" hint-placeholder-val="{{ false }}">
+                            <p style="margin:0;padding:0 14px 12px 42px;font-size:14px;line-height:1.75;white-space:pre-line;color:var(--muted);">{{ s.body }}</p>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                      <sc-if value="{{ m.hasSuggestions }}" hint-placeholder-val="{{ false }}">
+                        <div style="border-top:1px solid #eef1ef;padding:12px 14px;background:var(--g50);">
+                          <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--g700);margin-bottom:6px;">處理建議</div>
+                          <sc-for list="{{ m.suggestions }}" as="sv" hint-placeholder-count="2">
+                            <p style="margin:0 0 6px;font-size:14px;line-height:1.7;">{{ sv.n }}. {{ sv.plain }}</p>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="flex:none;display:flex;gap:6px;overflow-x:auto;padding:8px 10px;">
+          <sc-for list="{{ topics }}" as="t" hint-placeholder-count="6">
+            <button type="button" onClick="{{ t.ask }}" style="flex:none;background:#fff;border:1px solid var(--g500);color:var(--g800);border-radius:16px;padding:6px 12px;font-size:13.5px;cursor:pointer;white-space:nowrap;">{{ t.name }}</button>
+          </sc-for>
+        </div>
+        <div style="flex:none;display:flex;gap:8px;align-items:center;padding:10px 12px 18px;background:#fff;">
+          <input placeholder="輸入訊息" value="{{ input }}" onInput="{{ onInput }}" onKeyDown="{{ onKeyDown }}" style="flex:1;min-width:0;border:none;background:var(--bg);border-radius:20px;padding:10px 16px;font:400 15.5px var(--sans);outline:none;color:var(--ink);" />
+          <button type="button" onClick="{{ send }}" disabled="{{ sendDisabled }}" aria-label="送出" style="flex:none;width:40px;height:40px;border-radius:50%;border:none;background:var(--g700);color:#fff;font-size:18px;cursor:pointer;">↑</button>
+        </div>
+      </div>
+      <sc-if value="{{ showSidebar }}" hint-placeholder-val="{{ true }}">
+        <div style="max-width:320px;display:flex;flex-direction:column;gap:14px;">
+          <span style="font-size:13px;letter-spacing:.2em;color:var(--g600);font-weight:700;">LINE PREVIEW</span>
+          <div style="font:700 30px/1.3 var(--serif);color:var(--g900);">LINE 介面模擬</div>
+          <p style="margin:0;font-size:16px;line-height:1.85;color:var(--muted);">示意承辦人於 LINE 官方帳號查詢的情境。回覆以單張卡片呈現結論、引用來源與處理建議，點選編號可展開原文。</p>
+          <div style="padding:14px 16px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:14px;line-height:1.7;color:var(--muted);">正式上線需另建 LINE 官方帳號與後端伺服器串接。</div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const LS_KEY = 'sewer-law-chat-v3';
+const SYN = { '接管': '聯接 用戶排水設備 排洩', '罰': '罰鍰 處罰', '使用費': '計收 繳納 滯納金', '土地': '私有土地 埋設 償金 補償', '償金': '補償 異議 核定', '共有': '共有人', '驗收': '檢驗合格', '不繳': '滯納金 強制執行', '承裝商': '承裝技工 營業許可', '技工': '承裝技工 專任', '專用': '專用下水道 新開發社區', '社區': '新開發社區 專用下水道', '雨水': '雨水下水道 雨水流出抑制', '技師': '專業技師 簽證' };
+
+class Component extends DCLogic {
+  state = { D: null, view: 'chat', mode: 'web', convs: [], cur: null, input: '', open: {}, copied: {}, busy: false, browseQ: '', browseLaw: 'act', lawCat: 'all', lawSel: null, browseOpen: {}, browseMore: {}, wide: typeof window !== 'undefined' ? window.innerWidth >= 960 : true };
+  webScrollRef = React.createRef();
+  lineScrollRef = React.createRef();
+
+  componentDidMount() {
+    Promise.all([import('./data.js'), import('./laws.js')]).then(([d, l]) => { const D = { ...d, LAWS: l.LAWS }; this.D = D; this.buildIndex(D); this.setState({ D }); });
+    try {
+      const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (saved && Array.isArray(saved.convs)) {
+        const convs = saved.convs.map((c) => ({ ...c, messages: c.messages.map((m) => (m.loading ? { ...m, loading: false, conclusion: '（查詢中斷，請重新提問）', basis: [], rulings: [], suggestions: [] } : m)) }));
+        this.setState({ convs, mode: saved.mode || 'web' });
+      }
+    } catch (e) {}
+    this._r = () => { const w = window.innerWidth >= 960; if (w !== this.state.wide) this.setState({ wide: w }); };
+    window.addEventListener('resize', this._r);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._r); }
+  componentDidUpdate() {
+    if (this._scrollBottom) {
+      this._scrollBottom = false;
+      [this.webScrollRef, this.lineScrollRef].forEach((r) => { if (r.current) r.current.scrollTop = r.current.scrollHeight; });
+    }
+  }
+  persist() { try { localStorage.setItem(LS_KEY, JSON.stringify({ convs: this.state.convs.slice(0, 30), mode: this.state.mode })); } catch (e) {} }
+  updConv(cid, fn) { this._scrollBottom = true; this.setState((s) => ({ convs: s.convs.map((c) => (c.id === cid ? fn(c) : c)) }), () => this.persist()); }
+
+  // ---------- 知識庫 / 檢索層 ----------
+  grams(s) { const t = (s || '').replace(/[^\u4e00-\u9fffA-Za-z0-9]/g, ''); const g = new Set(); for (let i = 0; i < t.length - 1; i++) g.add(t.slice(i, i + 2)); return g; }
+  buildIndex(D) {
+    const docs = [];
+    D.ARTICLES.forEach((a) => docs.push({ kind: 'art', ref: 'A' + a.no, text: a.text }));
+    D.RULES.forEach((a) => docs.push({ kind: 'art', ref: 'R' + a.no, text: a.text }));
+    this.lawById = {}; this.cityOf = {}; this.preChunks = {};
+    D.LAWS.forEach((L) => {
+      this.lawById[L.id] = L;
+      const c = (L.title.match(/^(基隆|臺北|新北|桃園|新竹|苗栗|臺中|彰化|南投|雲林|嘉義|臺南|高雄|屏東|宜蘭|花蓮|臺東|金門|連江)/) || [])[1]; if (L.cat === 'local' && c) this.cityOf[L.id] = c;
+      L.arts.forEach((a) => { if (a.no) docs.push({ kind: 'law', ref: L.id + ':' + a.no, law: L.id, text: L.title + ' ' + a.text }); });
+      if (L.pre) { const parts = L.pre.split('\n'); let buf = '', k = 0; parts.forEach((p, i) => { buf += p + '\n'; if (buf.length > 380 || i === parts.length - 1) { const ref = L.id + ':p' + k; docs.push({ kind: 'law', ref, law: L.id, text: L.title + ' ' + buf }); this.preChunks[ref] = buf.trim(); k++; buf = ''; } }); }
+    });
+    const seen = new Set();
+    D.RULINGS.slice().sort((a, b) => b.y - a.y).forEach((r) => { const k = r.text.slice(0, 80); if (seen.has(k)) return; seen.add(k); docs.push({ kind: 'rul', ref: r.id, text: r.brief + r.text, y: r.y, refs: r.refs }); });
+    const df = {}; docs.forEach((d) => { d.g = this.grams(d.text); d.g.forEach((x) => { df[x] = (df[x] || 0) + 1; }); });
+    const N = docs.length; this.idf = {}; Object.keys(df).forEach((k) => { this.idf[k] = Math.log(1 + N / df[k]); });
+    const avg = docs.reduce((s, d) => s + d.g.size, 0) / N; docs.forEach((d) => { d.norm = 0.4 + 0.6 * (d.g.size / avg); });
+    this.docs = docs;
+    this.rulById = {}; D.RULINGS.forEach((r) => { this.rulById[r.id] = r; });
+  }
+  refText(ref) { const D = this.D; if (/^L\d+:/.test(ref)) { if (/:p\d+$/.test(ref)) return this.preChunks[ref] || ''; const [lid, no] = ref.split(':'); const L = this.lawById[lid]; const a = L && L.arts.find((x) => x.no === no); return a ? a.text : ''; } const n = Number(ref.slice(1)); const a = (ref[0] === 'A' ? D.ARTICLES : D.RULES).find((x) => x.no === n); return a ? a.text : ''; }
+  refLabel(ref) { if (/^L\d+:/.test(ref)) { const [lid, no] = ref.split(':'); const L = this.lawById[lid]; if (!L) return ref; return L.title + (no[0] === 'p' ? '（第' + (Number(no.slice(1)) + 1) + '段）' : (/要點|原則|程序|規範|注意事項/.test(L.title) ? '第' + no + '點' : '第' + no + '條')); } return (ref[0] === 'A' ? '下水道法第' : '下水道法施行細則第') + ref.slice(1) + '條'; }
+  retrieve(q) {
+    let ex = q; Object.keys(SYN).forEach((k) => { if (q.includes(k)) ex += ' ' + SYN[k]; });
+    const qg = [...this.grams(ex)];
+    const explicit = []; (q.match(/(細則)?第\s*(\d+)\s*條/g) || []).forEach((t) => { const m = t.match(/(細則)?第\s*(\d+)/); explicit.push((m[1] ? 'R' : 'A') + m[2]); });
+    const city = (q.match(/(基隆|臺北|台北|新北|桃園|新竹|苗栗|臺中|台中|彰化|南投|雲林|嘉義|臺南|台南|高雄|屏東|宜蘭|花蓮|臺東|台東|金門|連江|馬祖)/) || [])[1];
+    const cityN = city ? city.replace('台', '臺').replace('馬祖', '連江') : null;
+    const scored = this.docs.map((d) => {
+      let s = 0; qg.forEach((g) => { if (d.g.has(g)) s += this.idf[g] || 0; }); s = s / d.norm;
+      if (d.kind === 'art' && explicit.includes(d.ref)) s += 50;
+      if (d.kind === 'law') { const c = this.cityOf[d.law]; if (c) s = cityN === c ? s * 1.6 + 6 : s * 0.35; else if (this.lawById[d.law].cat === 'related') s *= 0.8; }
+      if (d.kind === 'rul') { if (d.refs.some((r) => explicit.includes(r))) s += 8; s += (d.y - 80) * 0.03; }
+      return { d, s };
+    }).filter((x) => x.s > 3);
+    scored.sort((a, b) => b.s - a.s);
+    const rus = scored.filter((x) => x.d.kind === 'rul').slice(0, 8).map((x) => x.d.ref);
+    const arts = scored.filter((x) => x.d.kind === 'art').slice(0, 3).map((x) => x.d.ref);
+    const laws = scored.filter((x) => x.d.kind === 'law').slice(0, 5).map((x) => x.d.ref);
+    rus.slice(0, 4).forEach((id) => this.rulById[id].refs.forEach((r) => { if (r !== 'other' && !arts.includes(r) && arts.length < 5) arts.push(r); }));
+    return { arts, rus, laws };
+  }
+
+  // ---------- 生成層 ----------
+  async ask(raw) {
+    const q = (raw || '').trim(); const D = this.state.D;
+    if (!q || this.state.busy || !D) return;
+    let cid = this.state.cur;
+    if (!cid || !this.state.convs.some((c) => c.id === cid)) {
+      cid = 'c' + Date.now();
+      await new Promise((res) => this.setState((s) => ({ convs: [{ id: cid, title: q.slice(0, 24), ts: Date.now(), messages: [] }, ...s.convs], cur: cid, view: 'chat' }), res));
+    }
+    const prevMsgs = (this.state.convs.find((c) => c.id === cid) || { messages: [] }).messages;
+    const bid = 'b' + Date.now();
+    this.setState({ input: '', busy: true, view: 'chat' });
+    this.updConv(cid, (c) => ({ ...c, ts: Date.now(), messages: [...c.messages, { id: 'u' + Date.now(), role: 'user', text: q }, { id: bid, role: 'bot', loading: true }] }));
+    const setBot = (patch) => this.updConv(cid, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === bid ? { ...m, loading: false, ...patch } : m)) }));
+
+    const m = q.match(/(細則)?第\s*(\d+)\s*條/);
+    if (m && q.replace(/(施行)?細則|第\s*\d+\s*條|下水道法|[的之?？。]|規定|內容|是什麼|函釋|相關/g, '').trim().length <= 2) {
+      const ref = (m[1] ? 'R' : 'A') + m[2];
+      if (this.refText(ref)) {
+        const all = D.RULINGS.filter((r) => r.refs.includes(ref)).sort((a, b) => b.y - a.y);
+        const top = all.slice(0, 6);
+        setBot({ conclusion: this.refLabel(ref) + '原文如下 [' + ref + ']' + (all.length ? '。本條共收錄 ' + all.length + ' 則解釋函令，以下列出最新 ' + top.length + ' 則' + top.map((r) => ' [' + r.id + ']').join('') + (all.length > top.length ? '，其餘請至「條文瀏覽」查看。' : '。') : '；目前資料庫未收錄本條之解釋函令。'),
+          basis: [{ ref, point: '' }], rulings: top.map((r) => ({ id: r.id, point: '' })), suggestions: [], autoOpen: true });
+        this.setState({ busy: false }); return;
+      }
+    }
+
+    const { arts, rus, laws } = this.retrieve(q);
+    laws.forEach((r) => arts.push(r));
+    if (!arts.length && !rus.length) { setBot({ conclusion: '目前資料庫未檢索到與此問題直接相關的條文或解釋函令。可改以條號（如「第14條」、「細則第4條」）或關鍵字（接管、償金、專用下水道）重新查詢。', basis: [], rulings: [], suggestions: [] }); this.setState({ busy: false }); return; }
+    const ctx = arts.map((r) => '[' + r + '] ' + this.refLabel(r) + '：' + this.refText(r)).join('\n') + '\n\n' +
+      rus.map((id) => { const r = this.rulById[id]; return '[' + id + '] ' + r.agency + ' ' + r.date + ' ' + r.docNo + '（相關條文：' + r.refs.filter((x) => x !== 'other').map((x) => this.refLabel(x)).join('、') + '）\n' + r.text.slice(0, 900); }).join('\n\n');
+    const hist = prevMsgs.slice(-4).map((x) => (x.role === 'user' ? '承辦人：' + x.text : '助理：' + (x.conclusion || ''))).join('\n');
+    const prompt = '你是協助內政部國土管理署承辦人查詢下水道相關法規的助理。以下是檢索系統找出的相關條文（含下水道法、施行細則、中央與地方下水道法規、相關中央法規）與解釋函令，只能依據這些資料回答，不得引用資料以外的法規或見解；資料不足以回答時請明白說明。\n\n【檢索資料】\n' + ctx + '\n\n【先前對話】\n' + hist + '\n\n【承辦人問題】' + q + '\n\n請用繁體中文、公文用語。引用時在句中插入資料標記，例如 [A14]、[R7]、[L27:5]、[r123]（請照抄資料中方括號內的代碼）。只回傳 JSON（不要 Markdown）：\n{"conclusion":"2-4句結論，含引用標記","basis":[{"ref":"A14","point":"此條與本案關聯的一句說明"}],"rulings":[{"id":"r123","point":"此函釋與本案關聯的一句說明"}],"suggestions":["具體處理步驟，含引用標記"]}\nbasis 與 rulings 只列真正相關者，依重要性排序；下水道法本身條文優先，地方法規僅在問題涉及該縣市時引用。basis 的 ref 可為 A、R 或 L 開頭代碼。';
+    let out = null;
+    try {
+      let res = '';
+      if (window.claude && window.claude.complete) res = await window.claude.complete(prompt);
+      else { const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) }); if (r.ok) res = (await r.json()).text || ''; }
+      const j = res.match(/\{[\s\S]*\}/); if (j) out = JSON.parse(j[0]);
+    } catch (e) { out = null; }
+    if (out && out.conclusion) {
+      const okA = (r) => !!this.refText(String(r || ''));
+      setBot({ conclusion: out.conclusion,
+        basis: (out.basis || []).filter((b) => okA(b.ref)).map((b) => ({ ref: b.ref, point: b.point || '' })),
+        rulings: (out.rulings || []).filter((r) => this.rulById[r.id]).map((r) => ({ id: r.id, point: r.point || '' })),
+        suggestions: (out.suggestions || []).filter(Boolean) });
+    } else {
+      setBot({ conclusion: '依檢索結果，與本問題最相關者為' + arts.map((r) => ' [' + r + ']').join('') + (rus.length ? '，並請參考解釋函令' + rus.slice(0, 5).map((r) => ' [' + r + ']').join('') : '') + '。請展開原文確認適用情形。',
+        basis: arts.map((r) => ({ ref: r, point: '' })), rulings: rus.slice(0, 5).map((id) => ({ id, point: '' })), suggestions: [] });
+    }
+    this.setState({ busy: false });
+  }
+
+  copy(key, text) {
+    const done = () => { this.setState((s) => ({ copied: { ...s.copied, [key]: true } })); setTimeout(() => this.setState((s) => ({ copied: { ...s.copied, [key]: false } })), 1500); };
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.resolve()).then(done, done);
+  }
+  toggle(key, def) { this.setState((s) => ({ open: { ...s.open, [key]: !(s.open[key] ?? def) } })); }
+  goCite(msgId, key) {
+    this.setState((s) => ({ open: { ...s.open, [msgId + key]: true } }), () => {
+      const line = this.state.mode === 'line';
+      const el = document.getElementById((line ? 'L-' : 'W-') + msgId + key);
+      const box = (line ? this.lineScrollRef : this.webScrollRef).current;
+      if (!el || !box) return;
+      box.scrollTop += el.getBoundingClientRect().top - box.getBoundingClientRect().top - 24;
+      if (el.animate) el.animate([{ background: '#cfe6d9' }, { background: 'transparent' }], { duration: 1800, easing: 'ease-out' });
+    });
+  }
+
+  // ---------- 應用層 ----------
+  renderVals() {
+    const S = this.state; const D = S.D;
+    const conv = S.convs.find((c) => c.id === S.cur);
+    const CATN = { central: '中央下水道法規', local: '地方下水道法規', related: '相關中央法規' };
+    const chName = (ref) => { if (ref[0] === 'L') { const L = this.lawById && this.lawById[ref.split(':')[0]]; return L ? CATN[L.cat] : ''; } if (ref[0] === 'R') return '下水道法施行細則'; const a = D.ARTICLES.find((x) => x.no === Number(ref.slice(1))); return a ? (D.CHAPTERS.find((c) => c.id === a.chapter) || {}).name || '' : ''; };
+    const dot = (d) => React.createElement('span', { key: d, style: { display: 'inline-block', width: 7, height: 7, margin: '0 3px', borderRadius: '50%', background: '#23734f', animation: 'dcpulse 1.2s ' + (d * 0.2) + 's infinite' } });
+    const loadingEl = React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 8 } }, React.createElement('span', null, [0, 1, 2].map(dot)), '檢索條文與解釋函令中');
+    const tagRe = /\[\s*(A\d+|R\d+|r\d+|L\d+:p?\d+(?:-\d+)?|第\s*\d+\s*條)\s*\]/g;
+    const normTag = (t) => { t = t.replace(/\s/g, ''); const m = t.match(/^第(\d+)條$/); return m ? 'A' + m[1] : t; };
+
+    const messages = !conv || !D || !this.rulById ? [] : conv.messages.map((m) => {
+      if (m.role === 'user') return { isUser: true, isBot: false, text: m.text };
+      if (m.loading) return { isUser: false, isBot: true, loading: true, loadingEl, ready: false };
+      const sources = []; const tagMap = {};
+      (m.basis || []).forEach((b) => {
+        const body = this.refText(b.ref); if (!body) return;
+        const key = b.ref; const n = sources.length + 1; tagMap[b.ref] = n;
+        sources.push({ n, key, isRuling: false, title: this.refLabel(b.ref), shortTitle: this.refLabel(b.ref), meta: chName(b.ref), point: b.point, hasPoint: !!b.point, body, open: S.open[m.id + key] ?? !!m.autoOpen });
+      });
+      (m.rulings || []).forEach((rr) => {
+        const r = this.rulById[rr.id]; if (!r) return;
+        const key = r.id; const n = sources.length + 1; tagMap[r.id] = n;
+        sources.push({ n, key, isRuling: true, title: r.brief, shortTitle: r.brief.length > 34 ? r.brief.slice(0, 33) + '…' : r.brief, agency: r.agency, date: r.date, docNo: r.docNo, meta: r.agency + '　' + r.date + '　' + r.docNo, point: rr.point, hasPoint: !!rr.point, body: r.text, open: !!S.open[m.id + key] });
+      });
+      sources.forEach((s) => {
+        s.domId = 'W-' + m.id + s.key; s.lineDomId = 'L-' + m.id + s.key;
+        s.toggleLabel = s.open ? '收合' : (s.isRuling ? '展開全文' : '展開原文'); s.chev = s.open ? '收合' : '展開';
+        s.toggle = () => this.toggle(m.id + s.key, s.isRuling ? false : !!m.autoOpen);
+      });
+      const segs = (text) => {
+        const out = []; let last = 0, mt; tagRe.lastIndex = 0; text = text || '';
+        while ((mt = tagRe.exec(text))) {
+          if (mt.index > last) out.push({ isText: true, isCite: false, text: text.slice(last, mt.index) });
+          const n = tagMap[normTag(mt[1])];
+          if (n) { const src = sources[n - 1]; out.push({ isText: false, isCite: true, label: String(n), title: src.shortTitle, go: () => this.goCite(m.id, src.key) }); }
+          last = tagRe.lastIndex;
+        }
+        if (last < text.length) out.push({ isText: true, isCite: false, text: text.slice(last) });
+        return out;
+      };
+      const plain = (t) => (t || '').replace(tagRe, (x, g) => { const n = tagMap[normTag(g)]; return n ? '[' + n + ']' : ''; });
+      const suggestions = (m.suggestions || []).map((t, i) => ({ n: i + 1, segs: segs(t), plain: plain(t) }));
+      const arts = sources.filter((s) => !s.isRuling), rus = sources.filter((s) => s.isRuling);
+      const allText = () => ['【結論】', plain(m.conclusion), '', '【法律依據】', ...arts.map((s) => '[' + s.n + '] ' + s.shortTitle + '：' + s.body), '', '【相關解釋函令】', ...rus.map((s) => '[' + s.n + '] ' + s.meta + '\n' + s.body), '', '【處理建議】', ...suggestions.map((s) => s.n + '. ' + s.plain)].join('\n');
+      return { isUser: false, isBot: true, loading: false, ready: true, conclusion: segs(m.conclusion), sources,
+        articles: arts, rulings: rus, hasArticles: arts.length > 0, hasRulings: rus.length > 0,
+        articleCount: arts.length + ' 條', rulingCount: rus.length + ' 則',
+        suggestions, hasSuggestions: suggestions.length > 0,
+        copyLabel: S.copied[m.id] ? '已複製 ✓' : '複製完整回覆', copyAll: () => this.copy(m.id, allText()) };
+    });
+
+    const topics = D ? D.TOPICS.map((t, i) => ({ name: t.name, q: t.q, idx: String(i + 1).padStart(2, '0'), ask: () => this.ask(t.q) })) : [];
+    const history = S.convs.slice().sort((a, b) => b.ts - a.ts).map((c) => {
+      const d = new Date(c.ts); const active = c.id === S.cur;
+      return { title: c.title, date: (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'),
+        active, inactive: !active,
+        open: () => { this._scrollBottom = true; this.setState({ cur: c.id, view: 'chat' }); },
+        del: () => this.setState((s) => ({ convs: s.convs.filter((x) => x.id !== c.id), cur: s.cur === c.id ? null : s.cur }), () => this.persist()) };
+    });
+
+    const bq = S.browseQ.trim(); const bnum = bq.replace(/[第條\s]/g, ''); const isNum = /^\d+$/.test(bnum);
+    const mkEntry = (code, label, text, ask) => {
+      let rs = D.RULINGS.filter((r) => r.refs.includes(code)).sort((a, b) => b.y - a.y);
+      const textHit = !bq || (isNum ? bnum === code.slice(1) : (text || '').includes(bq));
+      if (bq && !isNum && !textHit) rs = rs.filter((r) => r.text.includes(bq) || r.brief.includes(bq));
+      if (bq && !textHit && !rs.length) return null;
+      const more = !!S.browseMore[code]; const shown = more ? rs : rs.slice(0, 4);
+      return { label, text: text || '', hasText: !!text, hasRulings: rs.length > 0, rulingLabel: rs.length + ' 則函釋', ask, hasAsk: !!ask,
+        hasMore: rs.length > 4, moreLabel: more ? '收合' : '顯示全部 ' + rs.length + ' 則',
+        toggleMore: () => this.setState((s) => ({ browseMore: { ...s.browseMore, [code]: !more } })),
+        rulings: shown.map((r) => { const k = code + r.id; const o = !!S.browseOpen[k]; return { brief: r.brief, meta: r.agency + '　' + r.date + '　' + r.docNo, src: r.src, summary: r.text, open: o, toggleLabel: o ? '收合' : '展開', toggle: () => this.setState((s) => ({ browseOpen: { ...s.browseOpen, [k]: !o } })) }; }) };
+    };
+    let browseChapters = [];
+    if (D) {
+      if (S.browseLaw === 'act') browseChapters = D.CHAPTERS.map((ch) => { const all = D.ARTICLES.filter((a) => a.chapter === ch.id); return { name: ch.name, domId: 'bch-' + ch.id, countLabel: '第' + all[0].no + '–' + all[all.length - 1].no + '條', articles: all.map((a) => mkEntry('A' + a.no, '第' + a.no + '條', a.text, () => this.ask('第' + a.no + '條'))).filter(Boolean) }; });
+      else if (S.browseLaw === 'rules') browseChapters = [{ name: '下水道法施行細則', domId: 'bch-rules', countLabel: '民國96年6月5日修正　·　共 ' + D.RULES.length + ' 條', articles: D.RULES.map((a) => mkEntry('R' + a.no, '第' + (a.label || a.no) + '條', a.text, () => this.ask('細則第' + a.no + '條'))).filter(Boolean) }];
+      else if (S.browseLaw === 'laws') {
+        const L = S.lawSel && this.lawById[S.lawSel];
+        if (L) {
+          const isPt = /要點|原則|程序|規範|注意事項/.test(L.title);
+          const ents = [];
+          L.arts.forEach((a) => { if (!a.no) return; if (!bq || (isNum ? a.no === bnum : a.text.includes(bq))) { const lab = isPt ? '第' + a.no + '點' : '第' + a.no + '條'; const code = L.id + ':' + a.no; const rs = D.RULINGS.filter((r) => r.refs.includes(code)).sort((x, y) => y.y - x.y); ents.push({ label: lab + (a.upd ? ' ★' : ''), text: a.text, hasText: true, hasRulings: rs.length > 0, rulings: rs.map((r) => { const k = code + r.id; const o = !!S.browseOpen[k]; return { brief: r.brief, meta: r.agency + '　' + r.date + '　' + r.docNo, src: r.src, summary: r.text, open: o, toggleLabel: o ? '收合' : '展開', toggle: () => this.setState((s) => ({ browseOpen: { ...s.browseOpen, [k]: !o } })) }; }), hasMore: false, hasAsk: true, ask: () => this.ask(L.title + lab + '的規定內容與適用') }); } });
+          if (L.pre && (!bq || L.pre.includes(bq))) ents.unshift({ label: L.arts.length ? '前言' : '內容', text: L.pre, hasText: true, hasRulings: false, rulings: [], hasMore: false, hasAsk: false });
+          const na = L.arts.filter((a) => a.no).length;
+          browseChapters = [{ name: L.title, domId: 'bch-law', countLabel: na ? '共 ' + na + (isPt ? ' 點' : ' 條') : '', articles: ents }];
+        }
+      }
+      else browseChapters = [{ name: '其他解釋函令', domId: 'bch-other', countLabel: '未對應特定條文', articles: [mkEntry('other', '其他', '', null)].filter(Boolean) }];
+      browseChapters = browseChapters.filter((c) => c.articles.length);
+    }
+    const chapterLinks = D && S.browseLaw === 'act' ? D.CHAPTERS.map((c) => ({ name: c.name.replace('　', ' '), go: () => { const el = document.getElementById('bch-' + c.id); let box = el && el.parentElement; while (box && box.scrollHeight <= box.clientHeight) box = box.parentElement; if (el && box) box.scrollTop += el.getBoundingClientRect().top - box.getBoundingClientRect().top - 20; } })) : [];
+    const lawTabs = [['act', '下水道法'], ['rules', '下水道法施行細則'], ['laws', '相關法規'], ['other', '其他函釋']].map(([k, n]) => ({ name: n, active: S.browseLaw === k, inactive: S.browseLaw !== k, go: () => this.setState({ browseLaw: k, browseMore: {}, lawSel: null }) }));
+    const CATS = [['all', '全部'], ['central', '中央下水道法規'], ['local', '地方下水道法規'], ['related', '相關中央法規']];
+    const lawList = !D ? [] : D.LAWS.map((L) => { const tHit = !bq || L.title.includes(bq); let n = 0; if (bq && !tHit) { L.arts.forEach((a) => { if (a.text && a.text.includes(bq)) n++; }); if (L.pre && L.pre.includes(bq)) n++; } return { L, ok: tHit || n > 0, n }; }).filter((x) => x.ok);
+    const lawCats = CATS.map(([k, n]) => ({ name: n, count: k === 'all' ? lawList.length : lawList.filter((x) => x.L.cat === k).length, active: S.lawCat === k, inactive: S.lawCat !== k, go: () => this.setState({ lawCat: k }) }));
+    const lawGroups = CATS.slice(1).filter(([k]) => S.lawCat === 'all' || S.lawCat === k).map(([k, n]) => {
+      const ls = lawList.filter((x) => x.L.cat === k);
+      return { name: n, count: ls.length + ' 種', laws: ls.map(({ L, n: hits }) => { const na = L.arts.filter((a) => a.no).length; const d = (L.hist.match(/(\d{2,3}|[一二三四五六七八九十百零〇]{2,6})年/) || [])[0] || ''; return { title: L.title, meta: (na ? na + (/要點|原則|程序|規範|注意事項/.test(L.title) ? ' 點' : ' 條') : '全文') + (d ? '　·　' + d : ''), upd: !!L.upd, hit: hits > 0, hitLabel: '符合 ' + hits + ' 處', open: () => this.setState({ lawSel: L.id }) }; }) };
+    }).filter((g) => g.laws.length);
+    const selLaw = S.lawSel && this.lawById && this.lawById[S.lawSel];
+    const nR = D ? D.RULINGS.length : 0;
+
+    return {
+      isChatTab: S.view === 'chat', isBrowseTab: S.view === 'browse', isWeb: S.mode === 'web', isLine: S.mode === 'line',
+      goChat: () => this.setState({ view: 'chat' }), goBrowse: () => this.setState({ view: 'browse' }),
+      setWeb: () => this.setState({ mode: 'web', view: 'chat' }, () => this.persist()),
+      setLine: () => { this._scrollBottom = true; this.setState({ mode: 'line', view: 'chat' }, () => this.persist()); },
+      isBrowse: S.view === 'browse', isWebChat: S.view === 'chat' && S.mode === 'web', isLineChat: S.view === 'chat' && S.mode === 'line',
+      showSidebar: S.wide, topics, history, noHistory: history.length === 0,
+      messages, isEmpty: messages.length === 0,
+      webScrollRef: this.webScrollRef, lineScrollRef: this.lineScrollRef,
+      newChat: () => this.setState({ cur: null, input: '', open: {} }),
+      input: S.input, sendDisabled: S.busy || !S.input.trim(),
+      onInput: (e) => { this.setState({ input: e.target.value }); if (e.target.tagName === 'TEXTAREA') { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; } },
+      onKeyDown: (e) => { if (e.key === 'Enter' && !e.shiftKey && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.preventDefault(); this.ask(this.state.input); } },
+      send: () => this.ask(S.input),
+      browseQ: S.browseQ, onBrowseQ: (e) => this.setState({ browseQ: e.target.value }),
+      browseChapters, browseEmpty: !!D && browseChapters.length === 0 && !(S.browseLaw === 'laws' && !selLaw), chapterLinks, lawTabs,
+      showLawPicker: S.browseLaw === 'laws' && !selLaw, showLawBack: S.browseLaw === 'laws' && !!selLaw, lawBack: () => this.setState({ lawSel: null }), lawHist: selLaw ? (selLaw.hist0 === selLaw.hist ? selLaw.hist : selLaw.hist0 + '　…　' + selLaw.hist) : '',
+      lawCats, lawGroups,
+      kbStat: D ? '下水道法 ' + D.ARTICLES.length + ' 條　·　下水道法施行細則 ' + D.RULES.length + ' 條' : '',
+      kbStat3: D ? '相關法規 ' + D.LAWS.length + ' 種' : '',
+      kbStat2: D ? '解釋函令 ' + nR + ' 則' : '',
+      browseStat: D ? '母法 ' + D.ARTICLES.length + ' 條　·　下水道法施行細則 ' + D.RULES.length + ' 條　·　相關法規 ' + D.LAWS.length + ' 種　·　解釋函令 ' + nR + ' 則' : '',
+    };
+  }
+}
+
+</script>
+</body>
+</html>
