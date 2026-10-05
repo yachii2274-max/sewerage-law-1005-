@@ -262,6 +262,9 @@
                       <sc-if value="{{ m.ready }}" hint-placeholder-val="{{ false }}">
                         <div style="background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 2px 10px rgba(12,42,31,.05);overflow:hidden;">
 
+                          <sc-if value="{{ m.offline }}" hint-placeholder-val="{{ false }}">
+                            <div style="padding:12px 28px;background:#fbf3e0;border-bottom:1px solid #ecdcb4;font-size:14px;line-height:1.7;color:#6b4e0f;">AI 未連線（{{ m.offlineMsg }}）。請開啟 /api/chat?test=1 檢查設定。</div>
+                          </sc-if>
                           <div style="padding:24px 28px;background:linear-gradient(180deg,var(--g50),#fff);border-bottom:1px solid var(--line);">
                             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
                               <span style="font-size:13px;font-weight:700;letter-spacing:.1em;color:#fff;background:var(--g700);border-radius:6px;padding:3px 10px;">結論</span>
@@ -354,6 +357,16 @@
                             </div>
                           </sc-if>
 
+                          <sc-if value="{{ m.hasReply }}" hint-placeholder-val="{{ false }}">
+                            <div style="padding:22px 28px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px;background:var(--g50);">
+                              <div style="display:flex;align-items:baseline;gap:10px;">
+                                <span style="font:700 18px var(--serif);color:var(--g800);">建議回覆</span>
+                                <span style="font-size:13px;color:var(--muted);">參考稿，請依個案修改</span>
+                                <button type="button" onClick="{{ m.copyReply }}" style="margin-left:auto;border:1px solid var(--g300);background:#fff;border-radius:8px;padding:5px 14px;font-size:14px;color:var(--g700);cursor:pointer;" style-hover="border-color:var(--g600);">{{ m.copyReplyLabel }}</button>
+                              </div>
+                              <p style="margin:0;padding:18px 22px;background:#fff;border:1px solid var(--line);border-radius:12px;font:400 17px/2 var(--serif);color:var(--ink);white-space:pre-wrap;text-wrap:pretty;">{{ m.reply }}</p>
+                            </div>
+                          </sc-if>
                           <div style="display:flex;align-items:center;gap:10px;padding:12px 28px;background:var(--bg);border-top:1px solid var(--line);">
                             <span style="font-size:13px;color:var(--muted);">依檢索之條文與解釋函令產生　·　非正式法律意見</span>
                             <button type="button" onClick="{{ m.copyAll }}" style="margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 14px;font-size:14px;color:var(--g700);cursor:pointer;" style-hover="border-color:var(--g500);">{{ m.copyLabel }}</button>
@@ -582,22 +595,24 @@ class Component extends DCLogic {
     const ctx = arts.map((r) => '[' + r + '] ' + this.refLabel(r) + '：' + this.refText(r)).join('\n') + '\n\n' +
       rus.map((id) => { const r = this.rulById[id]; return '[' + id + '] ' + r.agency + ' ' + r.date + ' ' + r.docNo + '（相關條文：' + r.refs.filter((x) => x !== 'other').map((x) => this.refLabel(x)).join('、') + '）\n' + r.text.slice(0, 900); }).join('\n\n');
     const hist = prevMsgs.slice(-4).map((x) => (x.role === 'user' ? '承辦人：' + x.text : '助理：' + (x.conclusion || ''))).join('\n');
-    const prompt = '你是協助內政部國土管理署承辦人查詢下水道相關法規的助理。以下是檢索系統找出的相關條文（含下水道法、施行細則、中央與地方下水道法規、相關中央法規）與解釋函令，只能依據這些資料回答，不得引用資料以外的法規或見解；資料不足以回答時請明白說明。\n\n【檢索資料】\n' + ctx + '\n\n【先前對話】\n' + hist + '\n\n【承辦人問題】' + q + '\n\n請用繁體中文、公文用語。引用時在句中插入資料標記，例如 [A14]、[R7]、[L27:5]、[r123]（請照抄資料中方括號內的代碼）。只回傳 JSON（不要 Markdown）：\n{"conclusion":"2-4句結論，含引用標記","basis":[{"ref":"A14","point":"此條與本案關聯的一句說明"}],"rulings":[{"id":"r123","point":"此函釋與本案關聯的一句說明"}],"suggestions":["具體處理步驟，含引用標記"]}\nbasis 與 rulings 只列真正相關者，依重要性排序；下水道法本身條文優先，地方法規僅在問題涉及該縣市時引用。basis 的 ref 可為 A、R 或 L 開頭代碼。';
+    const prompt = '你是協助內政部國土管理署承辦人查詢下水道相關法規的助理。以下是檢索系統找出的相關條文（含下水道法、施行細則、中央與地方下水道法規、相關中央法規）與解釋函令，只能依據這些資料回答，不得引用資料以外的法規或見解；資料不足以回答時請明白說明。\n\n【檢索資料】\n' + ctx + '\n\n【先前對話】\n' + hist + '\n\n【承辦人問題】' + q + '\n\n請用繁體中文、公文用語。引用時在句中插入資料標記，例如 [A14]、[R7]、[L27:5]、[r123]（請照抄資料中方括號內的代碼）。只回傳 JSON（不要 Markdown）：\n{"conclusion":"2-4句結論，含引用標記","basis":[{"ref":"A14","point":"此條與本案關聯的一句說明"}],"rulings":[{"id":"r123","point":"此函釋與本案關聯的一句說明"}],"suggestions":["具體處理步驟，含引用標記"],"reply":"建議回覆參考稿"}\nreply 的寫法：以承辦人回覆來文機關或民眾的口吻，寫成一段 250～450 字、可直接修改使用的完整回覆。須依「說明來意 → 引述法律依據（寫出法規名稱與條號，必要時摘錄條文重點）→ 參照相關函釋見解 → 套用到本案事實 → 結論與後續處理方式」的邏輯順序撰寫，語氣正式、條理清楚，不要使用方括號引用標記。資料不足以判斷時，請在回覆中說明需補充之事實。\nbasis 與 rulings 只列真正相關者，依重要性排序；下水道法本身條文優先，地方法規僅在問題涉及該縣市時引用。basis 的 ref 可為 A、R 或 L 開頭代碼。';
     let out = null;
     try {
       let res = '';
       if (window.claude && window.claude.complete) res = await window.claude.complete(prompt);
-      else { const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) }); if (r.ok) res = (await r.json()).text || ''; }
+      else { const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) }); const jj = await r.json().catch(() => ({})); if (r.ok) res = jj.text || ''; else this._apiErr = jj.error || ('HTTP ' + r.status); }
       const j = res.match(/\{[\s\S]*\}/); if (j) out = JSON.parse(j[0]);
-    } catch (e) { out = null; }
+    } catch (e) { out = null; this._apiErr = this._apiErr || String(e.message || e); }
+    const apiNote = this._apiErr ? '（AI 摘要未產生：' + this._apiErr + '）' : ''; this._apiErr = null;
     if (out && out.conclusion) {
       const okA = (r) => !!this.refText(String(r || ''));
       setBot({ conclusion: out.conclusion,
         basis: (out.basis || []).filter((b) => okA(b.ref)).map((b) => ({ ref: b.ref, point: b.point || '' })),
         rulings: (out.rulings || []).filter((r) => this.rulById[r.id]).map((r) => ({ id: r.id, point: r.point || '' })),
-        suggestions: (out.suggestions || []).filter(Boolean) });
+        suggestions: (out.suggestions || []).filter(Boolean), reply: String(out.reply || '').replace(/\[\s*(A\d+|R\d+|r\d+|L\d+:p?\d+(?:-\d+)?)\s*\]/g, '').trim() });
     } else {
-      setBot({ conclusion: '依檢索結果，與本問題最相關者為' + arts.map((r) => ' [' + r + ']').join('') + (rus.length ? '，並請參考解釋函令' + rus.slice(0, 5).map((r) => ' [' + r + ']').join('') : '') + '。請展開原文確認適用情形。',
+      arts.splice(5);
+      setBot({ offline: true, offlineMsg: apiNote ? apiNote.replace(/^（AI 摘要未產生：|）$/g, '') : 'AI 服務未連線', conclusion: 'AI 服務目前未連線，無法產生結論與建議回覆。以下僅列出依關鍵字檢索、最相關的' + arts.map((r) => ' [' + r + ']').join('') + (rus.length ? '，並請參考解釋函令' + rus.slice(0, 5).map((r) => ' [' + r + ']').join('') : '') + '。',
         basis: arts.map((r) => ({ ref: r, point: '' })), rulings: rus.slice(0, 5).map((id) => ({ id, point: '' })), suggestions: [] });
     }
     this.setState({ busy: false });
@@ -663,11 +678,13 @@ class Component extends DCLogic {
       const plain = (t) => (t || '').replace(tagRe, (x, g) => { const n = tagMap[normTag(g)]; return n ? '[' + n + ']' : ''; });
       const suggestions = (m.suggestions || []).map((t, i) => ({ n: i + 1, segs: segs(t), plain: plain(t) }));
       const arts = sources.filter((s) => !s.isRuling), rus = sources.filter((s) => s.isRuling);
-      const allText = () => ['【結論】', plain(m.conclusion), '', '【法律依據】', ...arts.map((s) => '[' + s.n + '] ' + s.shortTitle + '：' + s.body), '', '【相關解釋函令】', ...rus.map((s) => '[' + s.n + '] ' + s.meta + '\n' + s.body), '', '【處理建議】', ...suggestions.map((s) => s.n + '. ' + s.plain)].join('\n');
+      const allText = () => ['【結論】', plain(m.conclusion), '', '【法律依據】', ...arts.map((s) => '[' + s.n + '] ' + s.shortTitle + '：' + s.body), '', '【相關解釋函令】', ...rus.map((s) => '[' + s.n + '] ' + s.meta + '\n' + s.body), '', '【處理建議】', ...suggestions.map((s) => s.n + '. ' + s.plain), ...(m.reply ? ['', '【建議回覆參考稿】', m.reply] : [])].join('\n');
       return { isUser: false, isBot: true, loading: false, ready: true, conclusion: segs(m.conclusion), sources,
         articles: arts, rulings: rus, hasArticles: arts.length > 0, hasRulings: rus.length > 0,
         articleCount: arts.length + ' 條', rulingCount: rus.length + ' 則',
         suggestions, hasSuggestions: suggestions.length > 0,
+        reply: m.reply || '', hasReply: !!m.reply, offline: !!m.offline, offlineMsg: m.offlineMsg || '',
+        copyReplyLabel: S.copied[m.id + 'reply'] ? '已複製 ✓' : '複製回覆稿', copyReply: () => this.copy(m.id + 'reply', m.reply || ''),
         copyLabel: S.copied[m.id] ? '已複製 ✓' : '複製完整回覆', copyAll: () => this.copy(m.id, allText()) };
     });
 
